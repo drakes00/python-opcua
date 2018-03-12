@@ -209,11 +209,11 @@ class SecureConnection(object):
             self.security_policy, message, self._max_chunk_size,
             message_type=message_type,
             channel_id=self.channel.SecurityToken.ChannelId,
-            request_id=request_id%64 if request_id%64>0 else 1,
+            request_id=request_id%16 if request_id%16>0 else 1,
             token_id=token_id)
         for chunk in chunks:
             self._sequence_number += 1
-            if self._sequence_number >= 64:#(1 << 32):
+            if self._sequence_number >= 16:#(1 << 32):
                 logger.debug("Wrapping sequence number: %d -> 1", self._sequence_number)
                 self._sequence_number = 1
             chunk.SequenceHeader.SequenceNumber = self._sequence_number
@@ -251,8 +251,7 @@ class SecureConnection(object):
         num = chunk.SequenceHeader.SequenceNumber
         if self._peer_sequence_number is not None:
             if num != self._peer_sequence_number + 1:
-                wrap = 63#(1 << 32) - 1024
-                print("seq", num, num < 1024, self._peer_sequence_number, self._peer_sequence_number >= wrap)
+                wrap = 16-1#(1 << 32) - 1024
                 if num < 1024 and self._peer_sequence_number >= wrap:
                     # specs Part 6, 6.7.2
                     logger.debug("Sequence number wrapped: %d -> %d",
@@ -261,7 +260,7 @@ class SecureConnection(object):
                     raise ua.UaError(
                         "Wrong sequence {0} -> {1} (server bug or replay attack)"
                         .format(self._peer_sequence_number, num))
-        self._peer_sequence_number = num%64
+        self._peer_sequence_number = num%16
 
     def receive_from_header_and_body(self, header, body):
         """
