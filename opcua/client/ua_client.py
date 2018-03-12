@@ -58,6 +58,7 @@ class UASocketClient(object):
                 self._request_handle -= 1
                 raise
             self._request_id += 1
+            if self._request_id == 64: self._request_id = 1 # ADDED
             future = Future()
             if callback:
                 future.add_done_callback(callback)
