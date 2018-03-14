@@ -74,7 +74,7 @@ class Server(object):
 
     """
 
-    def __init__(self, shelffile=None, iserver=None):
+    def __init__(self, callback, shelffile=None, iserver=None):
         self.logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
@@ -93,6 +93,8 @@ class Server(object):
         self.private_key = None
         self._policies = []
         self.nodes = Shortcuts(self.iserver.isession)
+
+        self.callback = callback
 
         # setup some expected values
         self.set_application_uri(self._application_uri)
@@ -279,7 +281,7 @@ class Server(object):
         self._setup_server_nodes()
         self.iserver.start()
         try:
-            self.bserver = BinaryServer(self.iserver, self.endpoint.hostname, self.endpoint.port)
+            self.bserver = BinaryServer(self.iserver, self.endpoint.hostname, self.endpoint.port, self.callback)
             self.bserver.set_policies(self._policies)
             self.bserver.start()
         except Exception as exp:

@@ -11,14 +11,14 @@ except ImportError:
 
 from opcua import ua
 import opcua.ua.ua_binary as uabin
-from opcua.server.uaprocessor import UaProcessor
+from opcua.server.uaprocessor import DiscoUaProcessor
 
 logger = logging.getLogger(__name__)
 
 
 class BinaryServer(object):
 
-    def __init__(self, internal_server, hostname, port):
+    def __init__(self, internal_server, hostname, port, callback):
         self.logger = logging.getLogger(__name__)
         self.hostname = hostname
         self.port = port
@@ -27,6 +27,7 @@ class BinaryServer(object):
         self._server = None
         self._policies = []
         self.clients = []
+        self.callback = callback
 
     def set_policies(self, policies):
         self._policies = policies
@@ -47,6 +48,7 @@ class BinaryServer(object):
             logger = self.logger
             policies = self._policies
             clients = self.clients
+            callback = self.callback
 
             def __str__(self):
                 return "OPCUAProtocol({}, {})".format(self.peername, self.processor.session)
@@ -56,7 +58,7 @@ class BinaryServer(object):
                 self.peername = transport.get_extra_info('peername')
                 self.logger.info('New connection from %s', self.peername)
                 self.transport = transport
-                self.processor = UaProcessor(self.iserver, self.transport)
+                self.processor = DiscoUaProcessor(self.iserver, self.transport, self.callback)
                 self.processor.set_policies(self.policies)
                 self.data = b""
                 self.iserver.asyncio_transports.append(transport)
